@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Redirecting...</title>
+  </head>
+  <body>
+    <script>
+      const GITHUB_REPO = 'taichunmin/url.taichunmin.idv.tw'
+      const FAILBACK_URL = 'https://taichunmin.idv.tw'
+      const PATH_SEGMENTS_TO_SKIP = 0
+
+      async function fetchRedirect () {
+        try {
+          const location = window.location
+          const [issueId, ...segments] = location.pathname.split('/').slice(PATH_SEGMENTS_TO_SKIP + 1)
+          if (!/^\d+$/.test(issueId)) throw new Error('invalid issue number')
+
+          const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues/${issueId}`)
+          if (!res.ok) throw new Error('failed to fetch issue')
+          const issue = await res.json()
+
+          const url = new URL(`${segments.join('/')}${location.search}${location.hash}`, issue.title)
+          if (url.href === location.href) throw new Error('recursive redirect')
+          return url.href
+        } catch (err) {
+          console.error(err)
+          return FAILBACK_URL
+        }
+      }
+
+      ;(async () => {
+        const redirect = await fetchRedirect()
+        location.replace(redirect)
+        document.write(`<h3>If you are not redirected automatically, <a target="_blank" href="${redirect}">click here to open.</a><h3>`)
+      })()
+    </script>
+  </body>
+</html>
