@@ -3,26 +3,30 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Redirecting...</title>
+    <title>網址跳轉頁 | 筆記國度</title>
+    <meta property="og:title" content="網址跳轉頁 | 筆記國度">
+    <meta property="og:description" content="這是 taichunmin 所建立的短網址。">
   </head>
   <body>
     <script>
       const GITHUB_REPO = 'taichunmin/url.taichunmin.idv.tw'
       const FAILBACK_URL = 'https://taichunmin.idv.tw'
       const PATH_SEGMENTS_TO_SKIP = 0
+      const USER_WHITELIST = ['taichunmin']
 
       async function fetchRedirect () {
         try {
-          const location = window.location
-          const [issueId, ...segments] = location.pathname.split('/').slice(PATH_SEGMENTS_TO_SKIP + 1)
+          const cur = window.location
+          const [issueId, ...segments] = cur.pathname.split('/').slice(PATH_SEGMENTS_TO_SKIP + 1)
           if (!/^\d+$/.test(issueId)) throw new Error('invalid issue number')
 
           const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/issues/${issueId}`)
           if (!res.ok) throw new Error('failed to fetch issue')
           const issue = await res.json()
+          if (!USER_WHITELIST.includes(issue.user.login)) throw new Error('user not in whitelist')
 
-          const url = new URL(`${segments.join('/')}${location.search}${location.hash}`, issue.title)
-          if (url.href === location.href) throw new Error('recursive redirect')
+          const url = new URL(`${segments.join('/')}${cur.search}${cur.hash}`, issue.title)
+          if (url.href === cur.href) throw new Error('recursive redirect')
           return url.href
         } catch (err) {
           console.error(err)
@@ -30,10 +34,20 @@
         }
       }
 
+      function escapeHtml(unsafe) {
+        return unsafe
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;")
+      }
+
       ;(async () => {
         const redirect = await fetchRedirect()
-        location.replace(redirect)
-        document.write(`<h3>If you are not redirected automatically, <a target="_blank" href="${redirect}">click here to open.</a><h3>`)
+        console.log(redirect)
+        window.document.write(`<h3><a href="${escapeHtml(redirect)}">Please click this link</a> if you are not redirected automatically.<h3>`)
+        window.location.replace(redirect)
       })()
     </script>
   </body>
