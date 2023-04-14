@@ -13,6 +13,13 @@
       const FAILBACK_URL = 'https://taichunmin.idv.tw'
       const PATH_SEGMENTS_TO_SKIP = 0
       const USER_WHITELIST = ['taichunmin']
+      const ESCAPE_HTML_MAP = new Map([
+        ['&', '&amp;'],
+        ['<', '&lt;'],
+        ['>', '&gt;'],
+        ['"', '&quot;'],
+        ["'", '&#039;'],
+      ])
 
       async function fetchRedirect () {
         try {
@@ -35,18 +42,13 @@
       }
 
       function escapeHtml(unsafe) {
-        return unsafe
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;")
+        return unsafe.replaceAll(/[&<>"']/g, ch => ESCAPE_HTML_MAP.get(ch))
       }
 
       ;(async () => {
         const redirect = await fetchRedirect()
         console.log(redirect)
-        window.document.write(`<h3><a href="${escapeHtml(redirect)}">Please click this link</a> if you are not redirected automatically.<h3>`)
+        window.document.write(`<h3><a href="${escapeHtml(redirect)}">如果網頁沒有自動跳轉，請點此連結前往。</a><h3>`)
         window.location.replace(redirect)
       })()
     </script>
